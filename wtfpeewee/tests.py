@@ -5,7 +5,7 @@ import unittest
 from peewee import *
 from wtforms import fields as wtfields
 from wtforms.form import Form as WTForm
-from wtforms.validators import Regexp
+from wtforms.validators import Regexp, Length
 from wtfpeewee.fields import *
 from wtfpeewee.orm import model_form
 from wtfpeewee._compat import PY2
@@ -70,6 +70,8 @@ class NonIntPKModel(TestModel):
 
 BlogForm = model_form(Blog)
 EntryForm = model_form(Entry)
+NullEntryForm = model_form(NullEntry)
+NullEntryFormCustom = model_form(NullEntry,field_args={'blog':{'validators':[Length(max=10)]}})
 NullFieldsModelForm = model_form(NullFieldsModel)
 ChoicesForm = model_form(ChoicesModel, field_args={'salutation': {'choices': (('mr', 'Mr.'), ('mrs', 'Mrs.'))}})
 NonIntPKForm = model_form(NonIntPKModel, allow_pk=True)
@@ -508,6 +510,16 @@ class WTFPeeweeTestCase(unittest.TestCase):
         self.assertEqual(html, u'<input id="blog" name="blog" type="hidden" value="">')
 
         self.assertTrue(form.validate())
+
+    def test_opt_foreign_key(self):
+        form = NullEntryForm(FakePost({'blog':"51"}))
+        #Does not pass
+        self.assertFalse(form.validate())
+
+        form = NullEntryFormCustom(FakePost({'blog':1}))
+        #Dies with TypeError: object of type 'Blog' has no len()
+        self.assertTrue(form.validate())
+    
 
 
 if __name__ == '__main__':
